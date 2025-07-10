@@ -1,62 +1,62 @@
-# 部署指南 - Render
+# 部署指南
 
-## 快速部署到Render
+## Fly.io 部署（推荐）
 
-### 1. 自动部署（推荐）
+### 1. 安装 Fly CLI
+```bash
+# Windows (PowerShell)
+iwr https://fly.io/install.ps1 -useb | iex
 
-1. 访问 [Render.com](https://render.com)
-2. 用GitHub账号登录
-3. 点击 "New" → "Web Service"
-4. 连接您的GitHub仓库：`blog-database`
-5. 配置设置：
-   - **Name**: `blog-database`
-   - **Environment**: `Node`
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
-   - **Plan**: `Free`
+# macOS
+curl -L https://fly.io/install.sh | sh
 
-6. 点击 "Create Web Service"
-7. 等待部署完成（约2-3分钟）
-
-### 2. 配置持久化存储
-
-部署完成后，在Render控制台：
-
-1. 进入您的服务
-2. 点击 "Environment" 标签
-3. 添加环境变量：
-   ```
-   NODE_ENV=production
-   PORT=10000
-   ```
-
-4. 点击 "Disk" 标签
-5. 添加磁盘存储：
-   - **Name**: `data`
-   - **Mount Path**: `/opt/render/project/src/data`
-   - **Size**: `1 GB`
-
-   - **Name**: `uploads`
-   - **Mount Path**: `/opt/render/project/src/uploads`
-   - **Size**: `5 GB`
-
-### 3. 获取API地址
-
-部署完成后，您会得到一个域名：
-```
-https://your-app-name.onrender.com
+# Linux
+curl -L https://fly.io/install.sh | sh
 ```
 
-您的API地址：
-- 文字数据：`https://your-app-name.onrender.com/api/data`
-- 图片管理：`https://your-app-name.onrender.com/api/images`
+### 2. 登录 Fly.io
+```bash
+fly auth login
+```
 
-## 自动重新部署
+### 3. 创建应用
+```bash
+fly apps create blog-database
+```
 
-Render支持自动重新部署：
-- 每次推送到GitHub的main分支
-- Render会自动检测并重新部署
-- 无需手动操作
+### 4. 创建数据卷
+```bash
+# 创建数据存储卷
+fly volumes create blog_data --size 1 --region hkg
+
+# 创建上传文件卷
+fly volumes create blog_uploads --size 5 --region hkg
+```
+
+### 5. 部署应用
+```bash
+fly deploy
+```
+
+### 6. 查看应用状态
+```bash
+fly status
+fly logs
+```
+
+## 自动部署设置
+
+### 1. 获取 Fly API Token
+1. 访问 [Fly.io Dashboard](https://fly.io/dashboard)
+2. 点击 "Access Tokens"
+3. 创建新的 API Token
+
+### 2. 设置 GitHub Secrets
+在您的GitHub仓库中设置以下Secrets：
+- `FLY_API_TOKEN`: 您的Fly API Token
+
+### 3. 自动部署
+每次推送到 `main` 分支时，GitHub Actions会自动部署到Fly.io
 
 ## 本地部署
 
@@ -80,22 +80,28 @@ npm run dev
 npm start
 ```
 
-## 测试API
+## 环境变量
 
-部署完成后，测试您的API：
+可以创建 `.env` 文件来配置环境变量：
 
-```bash
-# 测试文字数据API
-curl https://your-app-name.onrender.com/api/data
-
-# 测试图片API
-curl https://your-app-name.onrender.com/api/images
+```env
+PORT=8080
+NODE_ENV=production
 ```
 
-## Render优势
+## Fly.io 优势
 
-✅ **完全免费**：无时间限制  
-✅ **持久化存储**：数据不会丢失  
-✅ **自动部署**：GitHub推送后自动更新  
-✅ **稳定可靠**：适合生产环境  
-✅ **简单易用**：一键部署 
+- ✅ **免费额度**：每月3个应用免费
+- ✅ **无需信用卡**：免费额度内不需要
+- ✅ **全球部署**：多地区部署
+- ✅ **持久化存储**：支持Volumes
+- ✅ **自动部署**：GitHub集成
+- ✅ **性能优秀**：基于Docker
+
+## 生产环境注意事项
+
+1. 使用HTTPS（Fly.io自动提供）
+2. 配置防火墙规则
+3. 定期备份数据
+4. 监控应用状态
+5. 设置告警通知 
